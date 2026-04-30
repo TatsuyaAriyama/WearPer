@@ -4,6 +4,7 @@ import {
   GoogleAuthProvider,
   signInWithEmailAndPassword,
   signInWithPopup,
+  updateProfile,
 } from 'firebase/auth';
 import { auth, hasFirebaseConfig } from '../firebase/config.js';
 
@@ -24,12 +25,15 @@ export default function LoginScreen({ onDemoLogin }) {
 
     try {
       if (mode === 'signup') {
-        await createUserWithEmailAndPassword(auth, email, password);
+        const credential = await createUserWithEmailAndPassword(auth, email, password);
+        await updateProfile(credential.user, {
+          displayName: email.split('@')[0] || 'WearPer User',
+        });
       } else {
         await signInWithEmailAndPassword(auth, email, password);
       }
     } catch (authError) {
-      setError(authError.message);
+      setError(toReadableAuthError(authError.code));
     }
   }
 
@@ -44,7 +48,7 @@ export default function LoginScreen({ onDemoLogin }) {
     try {
       await signInWithPopup(auth, new GoogleAuthProvider());
     } catch (authError) {
-      setError(authError.message);
+      setError(toReadableAuthError(authError.code));
     }
   }
 
@@ -89,4 +93,23 @@ export default function LoginScreen({ onDemoLogin }) {
       </section>
     </main>
   );
+}
+
+function toReadableAuthError(code) {
+  switch (code) {
+    case 'auth/email-already-in-use':
+      return 'このメールアドレスはすでに登録されています。';
+    case 'auth/invalid-email':
+      return 'メールアドレスの形式を確認してください。';
+    case 'auth/invalid-credential':
+    case 'auth/user-not-found':
+    case 'auth/wrong-password':
+      return 'メールアドレスまたはパスワードが違います。';
+    case 'auth/weak-password':
+      return 'パスワードは6文字以上で入力してください。';
+    case 'auth/popup-closed-by-user':
+      return 'Googleログインがキャンセルされました。';
+    default:
+      return 'ログインに失敗しました。時間をおいて再度お試しください。';
+  }
 }

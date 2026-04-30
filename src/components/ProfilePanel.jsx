@@ -1,10 +1,4 @@
-import { Camera, Check, UserPlus } from 'lucide-react';
-
-const suggestions = [
-  { id: 'stylist-1', name: 'Minimal Room', userId: 'minimal_room' },
-  { id: 'stylist-2', name: 'Urban Daily', userId: 'urban_daily' },
-  { id: 'stylist-3', name: 'Clean Closet', userId: 'clean_closet' },
-];
+import { Camera } from 'lucide-react';
 
 const genderOptions = ['Men', 'Women'];
 
@@ -15,7 +9,6 @@ export default function ProfilePanel({
   onGenderChange,
   onAvatarChange,
   following,
-  onToggleFollow,
   onOpenFollowList,
 }) {
   function handleAvatarUpload(event) {
@@ -81,7 +74,7 @@ export default function ProfilePanel({
             <span>Posts</span>
           </div>
           <button type="button" onClick={() => onOpenFollowList('followers')}>
-            <strong>{profile.followers + following.length}</strong>
+            <strong>{profile.followers}</strong>
             <span>Followers</span>
           </button>
           <button type="button" onClick={() => onOpenFollowList('following')}>
@@ -89,32 +82,6 @@ export default function ProfilePanel({
             <span>Following</span>
           </button>
         </div>
-      </div>
-
-      <div className="suggestion-list">
-        <div className="section-label">Follow</div>
-        {suggestions.map((user) => {
-          const isFollowing = following.includes(user.id);
-
-          return (
-            <button
-              key={user.id}
-              type="button"
-              className={`suggestion-item ${isFollowing ? 'is-following' : ''}`}
-              onClick={() => onToggleFollow(user.id)}
-            >
-              <span className="suggestion-avatar">{user.name.slice(0, 1)}</span>
-              <span>
-                <strong>{user.name}</strong>
-                <small>@{user.userId}</small>
-              </span>
-              <span className={`suggestion-follow-state ${isFollowing ? 'is-following' : ''}`}>
-                {isFollowing ? <Check size={16} /> : <UserPlus size={16} />}
-                {isFollowing ? 'フォロー中' : 'フォロー'}
-              </span>
-            </button>
-          );
-        })}
       </div>
     </aside>
   );

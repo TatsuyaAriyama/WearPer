@@ -1,6 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { addDoc, collection, getDocs } from 'firebase/firestore';
+import {
+  addDoc,
+  collection,
+  doc,
+  getDocs,
+  onSnapshot,
+  serverTimestamp,
+  setDoc,
+} from 'firebase/firestore';
 import {
   ArrowDownUp,
   Bell,
@@ -15,6 +23,7 @@ import {
   Shirt,
   Sparkles,
   User,
+  X,
 } from 'lucide-react';
 import ClosetAnalysis from './components/ClosetAnalysis.jsx';
 import ClosetForm from './components/ClosetForm.jsx';
@@ -28,12 +37,12 @@ import { dummyClothes } from './data/dummyClothes.js';
 import { auth, db, hasFirebaseConfig } from './firebase/config.js';
 
 const initialProfile = {
-  name: 'Tatsuya',
+  name: 'WearPer User',
   handle: '@wearper',
   userId: 'wearper',
   gender: 'Men',
   posts: 0,
-  followers: 128,
+  followers: 0,
   avatarUrl: '',
 };
 
@@ -112,6 +121,7 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [notice, setNotice] = useState('');
   const [profile, setProfile] = useState(initialProfile);
+  const [registeredUsers, setRegisteredUsers] = useState([]);
   const [following, setFollowing] = useState(['stylist-1']);
   const [likedIds, setLikedIds] = useState([]);
   const [savedIds, setSavedIds] = useState([]);
@@ -136,11 +146,19 @@ export default function App() {
       setAuthUser(user);
       setIsAuthReady(true);
       if (user) {
+        const authUserId =
+          user.email?.split('@')[0]?.toLowerCase().replace(/[^a-z0-9_]/g, '') || 'wearper';
         setProfile((current) => ({
           ...current,
-          name: current.name || user.displayName || 'WearPer User',
-          userId: current.userId || user.email?.split('@')[0] || 'wearper',
-          handle: `@${current.userId || user.email?.split('@')[0] || 'wearper'}`,
+          name:
+            !current.name || current.name === initialProfile.name
+              ? user.displayName || authUserId
+              : current.name,
+          userId:
+            !current.userId || current.userId === initialProfile.userId
+              ? authUserId
+              : current.userId,
+          handle: `@${!current.userId || current.userId === initialProfile.userId ? authUserId : current.userId}`,
           avatarUrl: current.avatarUrl || user.photoURL || '',
         }));
       }
@@ -148,6 +166,50 @@ export default function App() {
 
     return unsubscribe;
   }, []);
+
+  useEffect(() => {
+    if (!hasFirebaseConfig || !db || !authUser) return undefined;
+
+    const unsubscribe = onSnapshot(
+      collection(db, 'users'),
+      (snapshot) => {
+        const users = snapshot.docs
+          .map((userDoc) => ({ id: userDoc.id, ...userDoc.data() }))
+          .filter((user) => user.id !== authUser.uid)
+          .map((user) => ({
+            id: user.id,
+            userId: user.userId || user.email?.split('@')[0] || 'wearper_user',
+            name: user.name || 'WearPer User',
+            handle: `@${user.userId || user.email?.split('@')[0] || 'wearper_user'}`,
+            bio: user.bio || 'WearPer user',
+            avatarUrl: user.avatarUrl || '',
+            followsMe: false,
+          }));
+
+        setRegisteredUsers(users);
+      },
+      (error) => console.error(error),
+    );
+
+    return unsubscribe;
+  }, [authUser]);
+
+  useEffect(() => {
+    if (!hasFirebaseConfig || !db || !authUser) return;
+
+    setDoc(
+      doc(db, 'users', authUser.uid),
+      {
+        email: authUser.email || '',
+        name: profile.name || authUser.displayName || 'WearPer User',
+        userId: profile.userId || authUser.email?.split('@')[0] || 'wearper',
+        avatarUrl: profile.avatarUrl || authUser.photoURL || '',
+        gender: profile.gender || 'Men',
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true },
+    ).catch((error) => console.error(error));
+  }, [authUser, profile.name, profile.userId, profile.avatarUrl, profile.gender]);
 
   useEffect(() => {
     document.body.dataset.theme = theme;
@@ -279,24 +341,29 @@ export default function App() {
     [following],
   );
 
+  const discoverUsers = useMemo(() => {
+    const remoteIds = new Set(registeredUsers.map((user) => user.id));
+    return [...registeredUsers, ...socialUsers.filter((user) => !remoteIds.has(user.id))];
+  }, [registeredUsers]);
+
   const followerUsers = useMemo(() => socialUsers.filter((user) => user.followsMe), []);
 
   const followingUsers = useMemo(
-    () => socialUsers.filter((user) => following.includes(user.id)),
-    [following],
+    () => discoverUsers.filter((user) => following.includes(user.id)),
+    [discoverUsers, following],
   );
 
   const searchedUsers = useMemo(() => {
     const query = userSearchId.trim().replace(/^@/, '').toLowerCase();
-    if (!query) return socialUsers;
+    if (!query) return discoverUsers;
 
-    return socialUsers.filter((user) =>
+    return discoverUsers.filter((user) =>
       [user.userId, user.handle.replace('@', ''), user.name]
         .join(' ')
         .toLowerCase()
         .includes(query),
     );
-  }, [userSearchId]);
+  }, [discoverUsers, userSearchId]);
 
   async function handleAddPost(newItem) {
     const temporaryItem = {
@@ -421,7 +488,7 @@ export default function App() {
   }
 
   function isMutual(userId) {
-    const user = socialUsers.find((item) => item.id === userId);
+    const user = discoverUsers.find((item) => item.id === userId);
     return Boolean(user?.followsMe && following.includes(userId));
   }
 
@@ -438,7 +505,7 @@ export default function App() {
   }
 
   function ensureMessageThread(userId) {
-    const user = socialUsers.find((item) => item.id === userId);
+    const user = discoverUsers.find((item) => item.id === userId);
     if (!user) return;
 
     setMessages((current) => {
@@ -726,7 +793,7 @@ export default function App() {
     return (
       <section className="screen profile-screen">
         <ProfilePanel
-          profile={{ ...profile, posts: posts.length }}
+          profile={{ ...profile, posts: posts.length, followers: followerUsers.length }}
           onNameChange={(name) => setProfile((current) => ({ ...current, name }))}
           onUserIdChange={(userId) =>
             setProfile((current) => ({
@@ -738,7 +805,6 @@ export default function App() {
           onGenderChange={(gender) => setProfile((current) => ({ ...current, gender }))}
           onAvatarChange={(avatarUrl) => setProfile((current) => ({ ...current, avatarUrl }))}
           following={following}
-          onToggleFollow={handleToggleFollow}
           onOpenFollowList={setFollowModalType}
         />
         <div className="closet-map">
@@ -898,7 +964,8 @@ export default function App() {
   }
 
   function renderUserProfile() {
-    const user = socialUsers.find((item) => item.id === activeProfileId) || socialUsers[0];
+    const user =
+      discoverUsers.find((item) => item.id === activeProfileId) || discoverUsers[0] || socialUsers[0];
     const mutual = isMutual(user.id);
     const isFollowing = following.includes(user.id);
 
@@ -906,8 +973,13 @@ export default function App() {
       <section className="screen other-profile-screen">
         <div className="screen-toolbar">
           <h1>@{user.userId}</h1>
-          <button type="button" className="ghost-button" onClick={() => setActiveTab('search')}>
-            Back
+          <button
+            type="button"
+            className="close-profile-button"
+            onClick={() => setActiveTab('search')}
+            aria-label="閉じる"
+          >
+            <X size={20} />
           </button>
         </div>
         <div className="other-profile-card">
@@ -960,14 +1032,16 @@ export default function App() {
 
   return (
     <main className="app-shell">
-      <button
-        type="button"
-        className="floating-settings"
-        onClick={() => setIsSettingsOpen(true)}
-        aria-label="設定"
-      >
-        <Settings size={20} />
-      </button>
+      {activeTab === 'profile' && (
+        <button
+          type="button"
+          className="floating-settings"
+          onClick={() => setIsSettingsOpen(true)}
+          aria-label="設定"
+        >
+          <Settings size={20} />
+        </button>
+      )}
       {screens[activeTab]()}
 
       <nav className="bottom-nav" aria-label="メインナビゲーション">
