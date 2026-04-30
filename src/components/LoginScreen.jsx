@@ -67,6 +67,11 @@ export default function LoginScreen({ onDemoLogin }) {
         <button type="button" className="google-button" onClick={handleGoogleLogin}>
           Googleで続ける
         </button>
+        {!hasFirebaseConfig && (
+          <p className="firebase-setup-note">
+            Googleログインを使うにはFirebaseのWebアプリ設定を.env.localに入れてください。
+          </p>
+        )}
 
         <form className="login-form" onSubmit={handleEmailAuth}>
           <input

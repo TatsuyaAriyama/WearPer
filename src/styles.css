@@ -1529,6 +1529,13 @@ body[data-theme="light"] .floating-settings {
   color: #ffffff;
 }
 
+.firebase-setup-note {
+  margin: -4px 0 0;
+  color: #a3a3a3;
+  font-size: 0.78rem;
+  line-height: 1.55;
+}
+
 .auth-switch {
   border: 0;
   background: transparent;
