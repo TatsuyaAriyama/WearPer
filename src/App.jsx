@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { addDoc, collection, getDocs } from 'firebase/firestore';
 import {
   ArrowDownUp,
@@ -10,6 +11,7 @@ import {
   PlusSquare,
   Search,
   Send,
+  Settings,
   Shirt,
   Sparkles,
   User,
@@ -17,10 +19,13 @@ import {
 import ClosetAnalysis from './components/ClosetAnalysis.jsx';
 import ClosetForm from './components/ClosetForm.jsx';
 import ClothingList from './components/ClothingList.jsx';
+import FollowListModal from './components/FollowListModal.jsx';
+import LoginScreen from './components/LoginScreen.jsx';
 import PostForm from './components/PostForm.jsx';
 import ProfilePanel from './components/ProfilePanel.jsx';
+import SettingsModal from './components/SettingsModal.jsx';
 import { dummyClothes } from './data/dummyClothes.js';
-import { db, hasFirebaseConfig } from './firebase/config.js';
+import { auth, db, hasFirebaseConfig } from './firebase/config.js';
 
 const initialProfile = {
   name: 'Tatsuya',
@@ -98,6 +103,8 @@ function getCostPerWear(item) {
 }
 
 export default function App() {
+  const [authUser, setAuthUser] = useState(null);
+  const [isAuthReady, setIsAuthReady] = useState(!hasFirebaseConfig);
   const [activeTab, setActiveTab] = useState('feed');
   const [posts, setPosts] = useState([]);
   const [closetItems, setClosetItems] = useState([]);
@@ -118,6 +125,34 @@ export default function App() {
   const [todayOutfitIds, setTodayOutfitIds] = useState([]);
   const [userSearchId, setUserSearchId] = useState('');
   const [followBurstId, setFollowBurstId] = useState('');
+  const [followModalType, setFollowModalType] = useState('');
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [theme, setTheme] = useState(localStorage.getItem('wearper-theme') || 'dark');
+
+  useEffect(() => {
+    if (!hasFirebaseConfig || !auth) return undefined;
+
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setAuthUser(user);
+      setIsAuthReady(true);
+      if (user) {
+        setProfile((current) => ({
+          ...current,
+          name: current.name || user.displayName || 'WearPer User',
+          userId: current.userId || user.email?.split('@')[0] || 'wearper',
+          handle: `@${current.userId || user.email?.split('@')[0] || 'wearper'}`,
+          avatarUrl: current.avatarUrl || user.photoURL || '',
+        }));
+      }
+    });
+
+    return unsubscribe;
+  }, []);
+
+  useEffect(() => {
+    document.body.dataset.theme = theme;
+    localStorage.setItem('wearper-theme', theme);
+  }, [theme]);
 
   useEffect(() => {
     const savedVersion = localStorage.getItem('wearper-storage-version');
@@ -244,6 +279,13 @@ export default function App() {
     [following],
   );
 
+  const followerUsers = useMemo(() => socialUsers.filter((user) => user.followsMe), []);
+
+  const followingUsers = useMemo(
+    () => socialUsers.filter((user) => following.includes(user.id)),
+    [following],
+  );
+
   const searchedUsers = useMemo(() => {
     const query = userSearchId.trim().replace(/^@/, '').toLowerCase();
     if (!query) return socialUsers;
@@ -353,6 +395,29 @@ export default function App() {
       window.setTimeout(() => setFollowBurstId(''), 650);
       return [...current, userId];
     });
+  }
+
+  function handleDemoLogin(user) {
+    setAuthUser({
+      uid: 'demo-user',
+      email: user.email,
+      displayName: user.displayName,
+      photoURL: '',
+    });
+    setProfile((current) => ({
+      ...current,
+      name: user.displayName,
+      userId: user.email?.split('@')[0] || 'wearper',
+      handle: `@${user.email?.split('@')[0] || 'wearper'}`,
+    }));
+  }
+
+  async function handleLogout() {
+    if (hasFirebaseConfig && auth) {
+      await signOut(auth);
+    }
+    setAuthUser(null);
+    setIsSettingsOpen(false);
   }
 
   function isMutual(userId) {
@@ -674,6 +739,7 @@ export default function App() {
           onAvatarChange={(avatarUrl) => setProfile((current) => ({ ...current, avatarUrl }))}
           following={following}
           onToggleFollow={handleToggleFollow}
+          onOpenFollowList={setFollowModalType}
         />
         <div className="closet-map">
           {sortedClothes.length === 0 ? (
@@ -884,8 +950,24 @@ export default function App() {
     userProfile: renderUserProfile,
   };
 
+  if (!isAuthReady) {
+    return <main className="login-screen" />;
+  }
+
+  if (!authUser) {
+    return <LoginScreen onDemoLogin={handleDemoLogin} />;
+  }
+
   return (
     <main className="app-shell">
+      <button
+        type="button"
+        className="floating-settings"
+        onClick={() => setIsSettingsOpen(true)}
+        aria-label="設定"
+      >
+        <Settings size={20} />
+      </button>
       {screens[activeTab]()}
 
       <nav className="bottom-nav" aria-label="メインナビゲーション">
@@ -906,6 +988,25 @@ export default function App() {
           );
         })}
       </nav>
+
+      {followModalType && (
+        <FollowListModal
+          title={followModalType === 'followers' ? 'Followers' : 'Following'}
+          users={followModalType === 'followers' ? followerUsers : followingUsers}
+          following={following}
+          onToggleFollow={handleToggleFollow}
+          onClose={() => setFollowModalType('')}
+        />
+      )}
+
+      {isSettingsOpen && (
+        <SettingsModal
+          theme={theme}
+          onThemeChange={setTheme}
+          onLogout={handleLogout}
+          onClose={() => setIsSettingsOpen(false)}
+        />
+      )}
     </main>
   );
 }

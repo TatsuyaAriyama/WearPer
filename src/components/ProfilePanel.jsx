@@ -16,6 +16,7 @@ export default function ProfilePanel({
   onAvatarChange,
   following,
   onToggleFollow,
+  onOpenFollowList,
 }) {
   function handleAvatarUpload(event) {
     const file = event.target.files?.[0];
@@ -79,14 +80,14 @@ export default function ProfilePanel({
             <strong>{profile.posts}</strong>
             <span>Posts</span>
           </div>
-          <div>
+          <button type="button" onClick={() => onOpenFollowList('followers')}>
             <strong>{profile.followers + following.length}</strong>
             <span>Followers</span>
-          </div>
-          <div>
+          </button>
+          <button type="button" onClick={() => onOpenFollowList('following')}>
             <strong>{following.length}</strong>
             <span>Following</span>
-          </div>
+          </button>
         </div>
       </div>
 

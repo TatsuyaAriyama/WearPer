@@ -26,6 +26,16 @@ body {
   background: #000000;
 }
 
+body[data-theme="light"] {
+  background: #f6f6f3;
+  filter: invert(1) hue-rotate(180deg);
+}
+
+body[data-theme="light"] img,
+body[data-theme="light"] video {
+  filter: invert(1) hue-rotate(180deg);
+}
+
 button,
 input,
 select,
@@ -979,7 +989,8 @@ img {
   gap: 8px;
 }
 
-.profile-stats div {
+.profile-stats div,
+.profile-stats button {
   border: 1px solid #202020;
   border-radius: 8px;
   background: #050505;
@@ -990,6 +1001,11 @@ img {
 .profile-stats span {
   display: block;
   text-align: center;
+}
+
+.profile-stats button {
+  color: #ffffff;
+  cursor: pointer;
 }
 
 .profile-stats span {
@@ -1380,6 +1396,214 @@ img {
   background: rgba(0, 0, 0, 0.94);
   padding: 8px 8px max(8px, env(safe-area-inset-bottom));
   backdrop-filter: blur(18px);
+}
+
+.floating-settings {
+  position: fixed;
+  top: 12px;
+  right: max(12px, calc((100vw - 680px) / 2 + 12px));
+  z-index: 40;
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border: 1px solid #303030;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.8);
+  color: #ffffff;
+  backdrop-filter: blur(14px);
+}
+
+.login-screen {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  background: #000000;
+  padding: 22px;
+}
+
+.login-card {
+  display: grid;
+  gap: 16px;
+  width: min(420px, 100%);
+  border: 1px solid #242424;
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.08), transparent 36%),
+    #050505;
+  padding: 22px;
+}
+
+.login-card p,
+.login-card h1 {
+  margin: 0;
+}
+
+.login-card p {
+  color: #a3a3a3;
+  font-size: 0.78rem;
+}
+
+.login-card h1 {
+  font-size: 1.6rem;
+  font-weight: 760;
+}
+
+.login-form {
+  display: grid;
+  gap: 10px;
+}
+
+.login-form input {
+  min-height: 44px;
+  border: 1px solid #303030;
+  border-radius: 999px;
+  background: #000000;
+  color: #ffffff;
+  padding: 0 14px;
+  outline: none;
+}
+
+.login-form span {
+  color: #ff8a8a;
+  font-size: 0.78rem;
+}
+
+.login-form button,
+.google-button {
+  min-height: 44px;
+  border: 1px solid #ffffff;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #000000;
+  font-weight: 760;
+}
+
+.google-button {
+  background: #000000;
+  color: #ffffff;
+}
+
+.auth-switch {
+  border: 0;
+  background: transparent;
+  color: #a3a3a3;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: end center;
+  background: rgba(0, 0, 0, 0.58);
+  padding: 14px;
+}
+
+.settings-modal,
+.follow-modal {
+  display: grid;
+  gap: 14px;
+  width: min(520px, 100%);
+  max-height: min(78vh, 640px);
+  overflow: auto;
+  border: 1px solid #303030;
+  border-radius: 8px;
+  background: #050505;
+  padding: 16px;
+  animation: modalIn 180ms ease both;
+}
+
+.modal-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.modal-heading h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.modal-heading button {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border: 1px solid #303030;
+  border-radius: 999px;
+  background: #000000;
+  color: #ffffff;
+}
+
+.theme-switch {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.theme-switch button,
+.logout-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  border: 1px solid #303030;
+  border-radius: 999px;
+  background: #000000;
+  color: #ffffff;
+}
+
+.theme-switch button.is-active {
+  background: #ffffff;
+  color: #000000;
+}
+
+.logout-button {
+  border-color: #ffffff;
+  background: #ffffff;
+  color: #000000;
+  font-weight: 760;
+}
+
+.follow-list {
+  display: grid;
+}
+
+.follow-list article {
+  display: grid;
+  grid-template-columns: 46px 1fr auto;
+  gap: 12px;
+  align-items: center;
+  border-bottom: 1px solid #202020;
+  padding: 12px 0;
+}
+
+.follow-list strong,
+.follow-list small {
+  display: block;
+}
+
+.follow-list small {
+  color: #a3a3a3;
+}
+
+.follow-list button {
+  min-width: 90px;
+  min-height: 36px;
+  border: 1px solid #ffffff;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #000000;
+  font-weight: 760;
+}
+
+.follow-list button.is-following {
+  border-color: #303030;
+  background: #101010;
+  color: #ffffff;
 }
 
 .analysis-screen {
@@ -1861,6 +2085,18 @@ img {
   100% {
     transform: scale(1);
     background: rgba(255, 255, 255, 0.035);
+  }
+}
+
+@keyframes modalIn {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
