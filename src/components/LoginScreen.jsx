@@ -41,12 +41,16 @@ export default function LoginScreen({ onDemoLogin }) {
     setError('');
 
     if (!hasFirebaseConfig || !auth) {
-      onDemoLogin({ email: 'demo@wearper.app', displayName: 'WearPer User' });
+      setError('GoogleログインにはFirebase設定が必要です。');
       return;
     }
 
     try {
-      await signInWithPopup(auth, new GoogleAuthProvider());
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({
+        prompt: 'select_account',
+      });
+      await signInWithPopup(auth, provider);
     } catch (authError) {
       setError(toReadableAuthError(authError.code));
     }

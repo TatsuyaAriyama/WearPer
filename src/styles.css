@@ -28,12 +28,13 @@ body {
 
 body[data-theme="light"] {
   background: #f6f6f3;
-  filter: invert(1) hue-rotate(180deg);
-}
-
-body[data-theme="light"] img,
-body[data-theme="light"] video {
-  filter: invert(1) hue-rotate(180deg);
+  color: #050505;
+  color-scheme: light;
+  --surface: #ffffff;
+  --surface-2: #f4f4f1;
+  --line: #deded8;
+  --muted: #6f6f68;
+  --soft: #242424;
 }
 
 button,
@@ -1407,6 +1408,39 @@ img {
   background: rgba(0, 0, 0, 0.94);
   padding: 8px 8px max(8px, env(safe-area-inset-bottom));
   backdrop-filter: blur(18px);
+}
+
+body[data-theme="light"] .app-shell {
+  background: #f6f6f3;
+  color: #050505;
+}
+
+body[data-theme="light"] .screen-toolbar,
+body[data-theme="light"] .bottom-nav {
+  border-color: #deded8;
+  background: rgba(246, 246, 243, 0.94);
+}
+
+body[data-theme="light"] .screen-toolbar h1,
+body[data-theme="light"] .profile-edit input,
+body[data-theme="light"] .profile-stats button,
+body[data-theme="light"] .bottom-nav button.is-active,
+body[data-theme="light"] .close-profile-button,
+body[data-theme="light"] .floating-settings {
+  color: #050505;
+}
+
+body[data-theme="light"] .bottom-nav button {
+  color: #77776f;
+}
+
+body[data-theme="light"] .bottom-nav button.is-active,
+body[data-theme="light"] .profile-stats div,
+body[data-theme="light"] .profile-stats button,
+body[data-theme="light"] .close-profile-button,
+body[data-theme="light"] .floating-settings {
+  border-color: #deded8;
+  background: #ffffff;
 }
 
 .floating-settings {
